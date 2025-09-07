@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Task Planner Bot</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Tabs - minimal custom CSS to complement Tailwind */
+        .tab-button[aria-selected="true"] {
+            color: #6d28d9; /* violet-700 */
+            border-color: #7c3aed; /* violet-600 */
+            background-color: #faf5ff; /* violet-50 */
+        }
+        .tab-button:focus-visible {
+            outline: 2px solid #7c3aed; /* violet-600 */
+            outline-offset: 2px;
+            border-radius: 0.5rem;
+        }
+        .tab-panel[hidden] {
+            display: none;
+        }
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 220px;
+            background-color: #1f2937;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 8px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -110px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.75rem;
+            line-height: 1.25;
+        }
+        .tooltip .tooltiptext::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #1f2937 transparent transparent transparent;
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+    <div class="min-h-screen flex flex-col items-center justify-center p-4">
+        <div class="w-full max-w-2xl mx-auto bg-white rounded-2xl shadow-lg border border-gray-200">
+            <!-- Header -->
+            <header class="p-6 border-b border-gray-200 flex justify-between items-center">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">Personal Task Planner Bot</h1>
+                    <p class="text-gray-500">Monday, September 1, 2025</p>
+                </div>
+                <div class="flex items-center space-x-3 bg-blue-50 text-blue-800 px-4 py-2 rounded-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-cloud-rain"><path d="M20 16.2A4.5 4.5 0 0 0 17.5 8h-1.8A7 7 0 1 0 4 14.9"/><path d="M16 14v6"/><path d="M8 14v6"/><path d="M12 16v6"/></svg>
+                    <span class="font-semibold">Rainy, 22°C</span>
+                </div>
+            </header>
+
+            <!-- Tabs -->
+            <nav class="px-6 pt-4 border-b border-gray-200" role="tablist" aria-label="Dashboard Sections">
+                <div class="flex gap-2">
+                    <button
+                        class="tab-button text-gray-600 hover:text-gray-900 px-4 py-2 border-b-2 border-transparent font-semibold transition-colors rounded-md inline-flex items-center gap-2"
+                        id="tab-focus"
+                        role="tab"
+                        type="button"
+                        aria-selected="true"
+                        aria-controls="panel-focus"
+                        data-tab-target="panel-focus"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-target"><path d="M12 14v.01"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/><circle cx="12" cy="12" r="4"/></svg>
+                        <span>Focus</span>
+                    </button>
+                    <button
+                        class="tab-button text-gray-600 hover:text-gray-900 px-4 py-2 border-b-2 border-transparent font-semibold transition-colors rounded-md inline-flex items-center gap-2"
+                        id="tab-timeline"
+                        role="tab"
+                        type="button"
+                        aria-selected="false"
+                        aria-controls="panel-timeline"
+                        data-tab-target="panel-timeline"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>
+                        <span>Timeline</span>
+                    </button>
+                    <button
+                        class="tab-button text-gray-600 hover:text-gray-900 px-4 py-2 border-b-2 border-transparent font-semibold transition-colors rounded-md inline-flex items-center gap-2"
+                        id="tab-architecture"
+                        role="tab"
+                        type="button"
+                        aria-selected="false"
+                        aria-controls="panel-architecture"
+                        data-tab-target="panel-architecture"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-cpu"><rect width="16" height="16" x="4" y="4" rx="2"/><path d="M9 9h6v6H9z"/><path d="M15 2v2"/><path d="M15 20v2"/><path d="M2 15h2"/><path d="M20 15h2"/><path d="M2 9h2"/><path d="M20 9h2"/><path d="M9 2v2"/><path d="M9 20v2"/></svg>
+                        <span>Architecture</span>
+                    </button>
+                </div>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="p-6 space-y-8">
+                <!-- Focus Now Card -->
+                <section id="panel-focus" class="tab-panel" role="tabpanel" tabindex="0" aria-labelledby="tab-focus">
+                    <h2 class="text-xs font-semibold uppercase text-gray-400 mb-3">Focus Now</h2>
+                    <div class="bg-violet-600 text-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-sm text-violet-200">09:00 AM - 11:00 AM</p>
+                                <h3 class="text-2xl font-bold mt-1">Draft Q3 Marketing Proposal</h3>
+                            </div>
+                            <div class="bg-violet-700 p-3 rounded-full">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-text"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center justify-end space-x-3">
+                            <button id="btn-reschedule" class="bg-violet-50 text-violet-700 font-semibold px-4 py-2 rounded-lg hover:bg-white transition-colors duration-200">Request Reschedule</button>
+                            <button id="btn-markdone" class="bg-white text-violet-700 font-bold px-4 py-2 rounded-lg hover:bg-violet-100 transition-colors duration-200">Mark as Done</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Today's Timeline -->
+                <section id="panel-timeline" class="tab-panel" role="tabpanel" tabindex="0" aria-labelledby="tab-timeline" hidden>
+                    <h2 class="text-xs font-semibold uppercase text-gray-400 mb-4">Timeline</h2>
+                    <div class="space-y-6">
+                        <!-- Timeline Item 1 -->
+                        <div class="flex items-start space-x-4">
+                            <div class="text-right w-20 flex-shrink-0">
+                                <p class="font-semibold text-gray-700">07:00 AM</p>
+                                <p class="text-sm text-gray-400">30 min</p>
+                            </div>
+                            <div class="relative w-full">
+                                <span class="absolute left-[-26px] top-1.5 h-3 w-3 bg-gray-300 rounded-full"></span>
+                                <span class="absolute left-[-22px] top-5 h-[calc(100%+1.5rem)] w-0.5 bg-gray-200"></span>
+                                <div class="bg-gray-100 p-4 rounded-lg flex justify-between items-center">
+                                    <p class="font-medium">Daily Standup Meeting</p>
+                                    <div class="tooltip">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-500 lucide lucide-sparkles"><path d="m12 3-1.9 4.2-4.1.6 3 2.9-.7 4.1 3.7-2 3.7 2-.7-4.1 3-2.9-4.1-.6Z"/></svg>
+                                        <span class="tooltiptext">Recurring daily event detected from Google Calendar.</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Timeline Item 2 - AI Rescheduled -->
+                        <div class="flex items-start space-x-4">
+                            <div class="text-right w-20 flex-shrink-0">
+                                <p class="font-semibold text-gray-700">07:30 AM</p>
+                                <p class="text-sm text-gray-400">1 hr</p>
+                            </div>
+                            <div class="relative w-full">
+                                <span class="absolute left-[-26px] top-1.5 h-3 w-3 bg-red-400 rounded-full ring-4 ring-red-100"></span>
+                                <span class="absolute left-[-22px] top-5 h-[calc(100%+1.5rem)] w-0.5 bg-gray-200"></span>
+                                <div class="bg-gray-100 p-4 rounded-lg flex justify-between items-center">
+                                    <p class="font-medium text-gray-500 line-through">Morning Run</p>
+                                    <div class="tooltip">
+                                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-500 lucide lucide-zap-off"><path d="M12.41 6.75 13 2l-3.5 7L13 9l-7 13 3-4-2.41 2.41"/><path d="M2 2 22 22"/><path d="m17 17-2.5-2.5"/></svg>
+                                        <span class="tooltiptext">Postponed due to predicted heavy rain. This task has been moved to 6:00 PM.</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Timeline Item 3 - Current Task -->
+                        <div class="flex items-start space-x-4">
+                           <div class="text-right w-20 flex-shrink-0">
+                                <p class="font-semibold text-violet-600">09:00 AM</p>
+                                <p class="text-sm text-gray-400">2 hr</p>
+                            </div>
+                            <div class="relative w-full">
+                                <span class="absolute left-[-26px] top-1.5 h-3 w-3 bg-violet-600 rounded-full ring-4 ring-violet-100"></span>
+                                <span class="absolute left-[-22px] top-5 h-[calc(100%+1.5rem)] w-0.5 bg-gray-200"></span>
+                                <div class="bg-violet-50 border border-violet-200 p-4 rounded-lg flex justify-between items-center">
+                                    <p class="font-bold text-violet-800">Draft Q3 Marketing Proposal</p>
+                                    <div class="tooltip">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-violet-500 lucide lucide-sparkles"><path d="m12 3-1.9 4.2-4.1.6 3 2.9-.7 4.1 3.7-2 3.7 2-.7-4.1 3-2.9-4.1-.6Z"/></svg>
+                                        <span class="tooltiptext">Scheduled during your peak productivity hours (9-11 AM) as a high-priority task from Notion.</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Timeline Item 4 -->
+                        <div class="flex items-start space-x-4">
+                            <div class="text-right w-20 flex-shrink-0">
+                                <p class="font-semibold text-gray-700">11:00 AM</p>
+                                <p class="text-sm text-gray-400">1 hr</p>
+                            </div>
+                             <div class="relative w-full">
+                                <span class="absolute left-[-26px] top-1.5 h-3 w-3 bg-gray-300 rounded-full"></span>
+                                <span class="absolute left-[-22px] top-5 h-full w-0.5 bg-gray-200"></span>
+                                <div class="bg-gray-100 p-4 rounded-lg flex justify-between items-center">
+                                    <p class="font-medium">Review Project Phoenix Designs</p>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </section>
+            </main>
+
+            <!-- Architecture Panel -->
+            <section id="panel-architecture" class="tab-panel p-6" role="tabpanel" tabindex="0" aria-labelledby="tab-architecture" hidden>
+                <h2 class="text-xs font-semibold uppercase text-gray-400 mb-4">Agentic Workflow</h2>
+                <div class="grid grid-cols-1 gap-4">
+                    <!-- Swimlane diagram using inline SVG -->
+                    <div class="border border-gray-200 rounded-xl p-4">
+                        <h3 class="font-bold text-gray-900 mb-3">Swimlane Diagram</h3>
+                        <svg viewBox="0 0 800 260" class="w-full" aria-label="Agentic workflow swimlane diagram">
+                            <defs>
+                                <style>
+                                    .lane{fill:#f9fafb;stroke:#e5e7eb;stroke-width:1;}
+                                    .lane-title{font:700 12px Inter, sans-serif;fill:#6b7280}
+                                    .box{fill:#ffffff;stroke:#d1d5db;stroke-width:2;rx:10;}
+                                    .title{font:700 12px Inter, sans-serif;fill:#111827}
+                                    .text{font:400 11px Inter, sans-serif;fill:#374151}
+                                    .arrow{stroke:#9ca3af;stroke-width:2;marker-end:url(#arrowhead)}
+                                </style>
+                                <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+                                    <polygon points="0 0, 10 3.5, 0 7" fill="#9ca3af" />
+                                </marker>
+                            </defs>
+                            <!-- Lanes -->
+                            <rect class="lane" x="10" y="10" width="780" height="60"/>
+                            <text class="lane-title" x="20" y="30">Data Sources & Ingestion</text>
+                            <rect class="lane" x="10" y="80" width="780" height="60"/>
+                            <text class="lane-title" x="20" y="100">Planning & Reasoning</text>
+                            <rect class="lane" x="10" y="150" width="780" height="60"/>
+                            <text class="lane-title" x="20" y="170">Execution & Feedback</text>
+
+                            <!-- Boxes in Lanes -->
+                            <rect class="box" x="40" y="25" width="180" height="40"/>
+                            <text class="title" x="50" y="43">WF1: Collector</text>
+                            <text class="text" x="50" y="58">Calendar | Notion | Weather</text>
+
+                            <rect class="box" x="290" y="95" width="220" height="40"/>
+                            <text class="title" x="300" y="113">WF2: Planner</text>
+                            <text class="text" x="300" y="128">Draft plan, detect conflicts, re-plan</text>
+
+                            <rect class="box" x="560" y="165" width="200" height="40"/>
+                            <text class="title" x="570" y="183">WF3: Executor</text>
+                            <text class="text" x="570" y="198">Update Calendar/Notion, notify Telegram</text>
+
+                            <!-- Feedback loop to learning -->
+                            <rect class="box" x="40" y="165" width="220" height="40"/>
+                            <text class="title" x="50" y="183">WF4: Reviewer & Learner</text>
+                            <text class="text" x="50" y="198">Analyze outcomes, refine rules (Notion)</text>
+
+                            <!-- Arrows -->
+                            <line class="arrow" x1="220" y1="45" x2="300" y2="115" />
+                            <line class="arrow" x1="510" y1="115" x2="560" y2="185" />
+                            <line class="arrow" x1="660" y1="185" x2="660" y2="60" />
+                            <line class="arrow" x1="660" y1="60" x2="220" y2="60" />
+                        </svg>
+                    </div>
+                    <div class="border border-gray-200 rounded-xl p-4">
+                        <h3 class="font-bold text-gray-900 mb-2">WF1: Collector Agent</h3>
+                        <ul class="list-disc list-inside text-sm text-gray-700 space-y-1">
+                            <li>Cron: every 15 minutes</li>
+                            <li>Reads Google Calendar and Notion tasks</li>
+                            <li>Fetches weather via OpenWeatherMap</li>
+                            <li>AI (Gemini): parses and structures data</li>
+                        </ul>
+                    </div>
+                    <div class="border border-gray-200 rounded-xl p-4">
+                        <h3 class="font-bold text-gray-900 mb-2">WF2: Planner Agent (Brain)</h3>
+                        <ul class="list-disc list-inside text-sm text-gray-700 space-y-1">
+                            <li>AI (Gemini): drafts plan considering weather and rules</li>
+                            <li>Conflict check (e.g., outdoor tasks during rain)</li>
+                            <li>If conflict: re-plan to resolve; else: approve final plan</li>
+                        </ul>
+                    </div>
+                    <div class="border border-gray-200 rounded-xl p-4">
+                        <h3 class="font-bold text-gray-900 mb-2">WF3: Executor Agent</h3>
+                        <ul class="list-disc list-inside text-sm text-gray-700 space-y-1">
+                            <li>Creates/updates Google Calendar events</li>
+                            <li>Updates Notion task statuses</li>
+                            <li>Sends plan summary and alerts via Telegram</li>
+                        </ul>
+                    </div>
+                    <div class="border border-gray-200 rounded-xl p-4">
+                        <h3 class="font-bold text-gray-900 mb-2">WF4: Reviewer & Learner Agent</h3>
+                        <ul class="list-disc list-inside text-sm text-gray-700 space-y-1">
+                            <li>Cron: daily at 10 PM</li>
+                            <li>Reads completed tasks and calendar history</li>
+                            <li>AI (Gemini): analyzes performance and refines rules</li>
+                            <li>Stores updated rules in Notion</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="mt-6 flex flex-wrap gap-3">
+                    <button class="bg-gray-800 text-white font-semibold px-4 py-2 rounded-lg hover:bg-gray-900 transition-colors" id="btn-simulate-plan">Simulate Plan</button>
+                    <button class="bg-violet-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-violet-700 transition-colors" id="btn-run-executor">Run Executor</button>
+                    <button class="bg-green-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-green-700 transition-colors" id="btn-export-to-calendar">Export Notion → Calendar</button>
+                    <button class="bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors" id="btn-sync-from-calendar">Sync from Calendar → Notion</button>
+                </div>
+
+                <div id="sim-output" class="mt-4 text-sm text-gray-700 hidden"></div>
+            </section>
+
+             <!-- Footer -->
+            <footer class="p-4 bg-gray-50 rounded-b-2xl text-center">
+                 <button id="btn-quick-add" class="bg-gray-800 text-white font-semibold px-6 py-3 rounded-full hover:bg-gray-900 transition-colors duration-200 flex items-center justify-center mx-auto space-x-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                    <span>Quick-Add Task to Notion</span>
+                 </button>
+            </footer>
+        </div>
+        <p class="text-center text-xs text-gray-400 mt-4">This is a frontend prototype. Data is for demonstration purposes only.</p>
+    </div>
+    <!-- Global Message Display -->
+    <div id="global-message" class="fixed top-4 right-4 z-50 hidden">
+        <div class="bg-white border border-gray-200 rounded-lg shadow-lg p-4 max-w-sm">
+            <p id="message-text" class="text-sm text-gray-800"></p>
+        </div>
+    </div>
+
+    <!-- Quick Add Modal -->
+    <div id="quick-add-modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-xl shadow-lg p-6 space-y-4">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-bold">Add New Task</h3>
+                <button id="quick-add-close" class="text-gray-500 hover:text-gray-800">✕</button>
+            </div>
+            <div class="space-y-3">
+                <div>
+                    <label class="text-sm font-semibold text-gray-700">Task Title</label>
+                    <input id="quick-add-title" type="text" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="Enter task title..." />
+                </div>
+                <div>
+                    <label class="text-sm font-semibold text-gray-700">Due Date (optional)</label>
+                    <input id="quick-add-date" type="date" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2" />
+                </div>
+                <div>
+                    <label class="text-sm font-semibold text-gray-700">Priority</label>
+                    <select id="quick-add-priority" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2">
+                        <option value="High">High</option>
+                        <option value="Medium" selected>Medium</option>
+                        <option value="Low">Low</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-sm font-semibold text-gray-700">Status</label>
+                    <select id="quick-add-status" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2">
+                        <option value="Todo" selected>Todo</option>
+                        <option value="In progress">In Progress</option>
+                        <option value="Today">Today</option>
+                    </select>
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+                <button id="quick-add-cancel" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300">Cancel</button>
+                <button id="quick-add-confirm" class="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-900">Add Task</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reschedule Modal -->
+    <div id="reschedule-modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-xl shadow-lg p-6 space-y-4">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-bold">Reschedule Task</h3>
+                <button id="reschedule-close" class="text-gray-500 hover:text-gray-800">✕</button>
+            </div>
+            <div class="space-y-3">
+                <div>
+                    <label class="text-sm font-semibold text-gray-700">Current Task</label>
+                    <p id="reschedule-task-title" class="mt-1 text-gray-900 font-medium">Draft Q3 Marketing Proposal</p>
+                </div>
+                <div>
+                    <label class="text-sm font-semibold text-gray-700">New Date</label>
+                    <input id="reschedule-date" type="date" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2" />
+                </div>
+                <div>
+                    <label class="text-sm font-semibold text-gray-700">New Time</label>
+                    <input id="reschedule-time" type="time" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2" />
+                </div>
+                <div>
+                    <label class="text-sm font-semibold text-gray-700">Duration (hours)</label>
+                    <input id="reschedule-duration" type="number" min="0.5" max="24" step="0.5" value="2" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="2" />
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+                <button id="reschedule-cancel" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300">Cancel</button>
+                <button id="reschedule-confirm" class="bg-violet-600 text-white px-4 py-2 rounded-lg hover:bg-violet-700">Reschedule</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-xl shadow-lg p-6 space-y-4">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-bold">Settings</h3>
+                <button id="settings-close" class="text-gray-500 hover:text-gray-800">✕</button>
+            </div>
+            <div class="space-y-3">
+                <div>
+                    <label class="text-sm font-semibold text-gray-700">Weather City</label>
+                    <input id="city-input" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="e.g., London,GB" />
+                </div>
+                <div class="flex items-center justify-between bg-blue-50 text-blue-800 px-3 py-2 rounded-lg">
+                    <span class="text-sm" id="google-conn-label">Connect Google Calendar</span>
+                    <button id="google-signin" class="bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700">Sign In</button>
+                </div>
+                <div>
+                    <label class="text-sm font-semibold text-gray-700">Notion Database ID</label>
+                    <input id="notion-db-input" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="Paste your tasks DB ID" />
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-sm font-semibold text-gray-700">Title Property</label>
+                        <input id="notion-title-prop" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="Title" />
+                    </div>
+                    <div>
+                        <label class="text-sm font-semibold text-gray-700">Status Property</label>
+                        <input id="notion-status-prop" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="Status" />
+                    </div>
+                    <div>
+                        <label class="text-sm font-semibold text-gray-700">Priority Property</label>
+                        <input id="notion-priority-prop" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="Priority" />
+                    </div>
+                    <div>
+                        <label class="text-sm font-semibold text-gray-700">Due Date Property</label>
+                        <input id="notion-due-prop" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="Due" />
+                    </div>
+                    <div>
+                        <label class="text-sm font-semibold text-gray-700">EventId Property (text)</label>
+                        <input id="notion-eventid-prop" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="EventId" />
+                    </div>
+                </div>
+                <div>
+                    <label class="text-sm font-semibold text-gray-700">Allowed Statuses (comma-separated)</label>
+                    <input id="notion-statuses" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="Todo, In progress, Today" />
+                </div>
+                <div>
+                    <label class="text-sm font-semibold text-gray-700">Priority Order (high→low)</label>
+                    <input id="notion-priority-order" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="High, Medium, Low" />
+                </div>
+                <label class="flex items-center gap-2 text-sm text-gray-700">
+                    <input id="include-notion-timeline" type="checkbox" class="h-4 w-4" />
+                    <span>Include Notion tasks in Timeline (uses due date)</span>
+                </label>
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+                <button id="settings-save" class="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-900">Save</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        (function() {
+            const API_BASE = (location.protocol === 'file:') ? 'http://localhost:3000' : '';
+            const urlPath = (p) => API_BASE + p;
+            const tabButtons = Array.from(document.querySelectorAll('.tab-button'));
+            const tabPanels = Array.from(document.querySelectorAll('.tab-panel'));
+
+            function selectTabById(tabId) {
+                const button = document.getElementById(tabId.startsWith('tab-') ? tabId : `tab-${tabId}`);
+                if (!button) return;
+                const targetId = button.getAttribute('data-tab-target');
+                const panel = document.getElementById(targetId);
+                if (!panel) return;
+
+                // Update buttons
+                tabButtons.forEach(b => {
+                    const selected = b === button;
+                    b.setAttribute('aria-selected', selected ? 'true' : 'false');
+                });
+
+                // Update panels
+                tabPanels.forEach(p => {
+                    if (p === panel) {
+                        p.hidden = false;
+                    } else {
+                        p.hidden = true;
+                    }
+                });
+
+                // Update hash and persist last tab
+                const simpleId = button.id.replace(/^tab-/, '');
+                const newHash = `#${simpleId}`;
+                try { localStorage.setItem('lastTab', simpleId); } catch (e) {}
+                if (location.hash !== newHash) {
+                    history.replaceState(null, '', newHash);
+                }
+            }
+
+            function handleClick(event) {
+                const button = event.currentTarget;
+                selectTabById(button.id);
+            }
+
+            function handleKeydown(event) {
+                const currentIndex = tabButtons.findIndex(b => b.getAttribute('aria-selected') === 'true');
+                if (currentIndex === -1) return;
+                let newIndex = currentIndex;
+                if (event.key === 'ArrowRight') {
+                    newIndex = (currentIndex + 1) % tabButtons.length;
+                } else if (event.key === 'ArrowLeft') {
+                    newIndex = (currentIndex - 1 + tabButtons.length) % tabButtons.length;
+                } else if (event.key === 'Home') {
+                    newIndex = 0;
+                } else if (event.key === 'End') {
+                    newIndex = tabButtons.length - 1;
+                } else if (event.key === 'Enter' || event.key === ' ') {
+                    // Activate currently focused tab
+                    const focused = document.activeElement;
+                    if (focused && focused.classList.contains('tab-button')) {
+                        selectTabById(focused.id);
+                    }
+                    return;
+                } else {
+                    return;
+                }
+                event.preventDefault();
+                tabButtons[newIndex].focus();
+                selectTabById(tabButtons[newIndex].id);
+            }
+
+            // Bind events
+            tabButtons.forEach(b => b.addEventListener('click', handleClick));
+            document.querySelector('[role="tablist"]').addEventListener('keydown', handleKeydown);
+
+            // Initialize from hash
+            const saved = (() => { try { return localStorage.getItem('lastTab'); } catch(e) { return null; } })();
+            const initial = (location.hash || `#${saved || 'focus'}`).replace('#', '');
+            selectTabById(initial);
+
+            // Respond to hash changes (if user edits URL)
+            window.addEventListener('hashchange', () => {
+                const target = (location.hash || '#focus').replace('#', '');
+                selectTabById(target);
+            });
+            // Demo actions on Architecture panel
+            const simBtn = document.getElementById('btn-simulate-plan');
+            const execBtn = document.getElementById('btn-run-executor');
+            const output = document.getElementById('sim-output');
+            // Global message function
+            function showMsg(msg) {
+                const globalMsg = document.getElementById('global-message');
+                const msgText = document.getElementById('message-text');
+                const output = document.getElementById('sim-output');
+                
+                // Show in global message (top-right)
+                if (globalMsg && msgText) {
+                    msgText.textContent = msg;
+                    globalMsg.classList.remove('hidden');
+                    setTimeout(() => {
+                        globalMsg.classList.add('hidden');
+                    }, 4000);
+                }
+                
+                // Also show in architecture output if available
+                if (output) {
+                    output.classList.remove('hidden');
+                    output.textContent = msg;
+                }
+            }
+            if (simBtn) simBtn.addEventListener('click', () => {
+                showMsg('Drafting plan with weather-aware constraints... No conflicts detected. Final plan approved.');
+            });
+            if (execBtn) execBtn.addEventListener('click', () => {
+                showMsg('Executor dispatched: Calendar updated, Notion statuses synced, Telegram alert sent.');
+            });
+            const exportBtn = document.getElementById('btn-export-to-calendar');
+            if (exportBtn) exportBtn.addEventListener('click', async () => {
+                try {
+                    const db = localStorage.getItem('notionDb');
+                    const params = new URLSearchParams();
+                    if (db) params.set('databaseId', db);
+                    const dueProp = localStorage.getItem('notionDueProp') || 'Due';
+                    const titleKey = localStorage.getItem('notionTitleProp') || 'Title';
+                    const statusProp = localStorage.getItem('notionStatusProp') || 'Status';
+                    const scheduledStatus = 'Scheduled';
+                    const eventIdProp = localStorage.getItem('notionEventIdProp') || 'EventId';
+                    const url = '/api/notion/tasks' + (params.toString() ? ('?' + params.toString()) : '');
+                    const notion = await fetchJSON(url);
+                    const items = (notion.results || []).map(r => {
+                        const props = r.properties || {};
+                        const titleProp = props[titleKey] || Object.values(props).find(p => p.type === 'title');
+                        const titleText = titleProp?.title?.map(t => t.plain_text).join(' ') || 'Notion Task';
+                        const start = props[dueProp]?.date?.start || null;
+                        const end = props[dueProp]?.date?.end || null;
+                        const url = r.url || undefined;
+                        const eventIdText = props[eventIdProp]?.rich_text?.[0]?.plain_text || '';
+                        return start ? { title: titleText, start, end, description: url ? `From Notion: ${url}` : undefined, notionId: r.id, eventId: eventIdText || undefined } : null;
+                    }).filter(Boolean);
+                    if (!items.length) { showMsg('No Notion tasks with due dates to export.'); return; }
+                    const resp = await fetch(urlPath('/api/calendar/events/batch'), {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ items, markScheduled: true, statusProp, scheduledStatus, eventIdProp })
+                    });
+                    if (!resp.ok) throw new Error(await resp.text());
+                    const json = await resp.json();
+                    showMsg(`Created ${json.createdCount}, updated ${json.updatedCount} task(s) in Google Calendar.`);
+                } catch (e) {
+                    showMsg('Export failed. Make sure Google is connected.');
+                }
+            });
+
+            const syncBtn = document.getElementById('btn-sync-from-calendar');
+            if (syncBtn) syncBtn.addEventListener('click', async () => {
+                try {
+                    // Load Notion tasks to get mapping EventId -> Notion page
+                    const db = localStorage.getItem('notionDb');
+                    const params = new URLSearchParams();
+                    if (db) params.set('databaseId', db);
+                    const statusProp = localStorage.getItem('notionStatusProp') || 'Status';
+                    const eventIdProp = localStorage.getItem('notionEventIdProp') || 'EventId';
+                    const dueProp = localStorage.getItem('notionDueProp') || 'Due';
+                    const url = '/api/notion/tasks' + (params.toString() ? ('?' + params.toString()) : '');
+                    const notion = await fetchJSON(url);
+                    const pages = (notion.results || []).map(r => ({
+                        notionId: r.id,
+                        eventId: r.properties?.[eventIdProp]?.rich_text?.[0]?.plain_text || null
+                    })).filter(p => p.eventId);
+                    if (!pages.length) { showMsg('No Notion items have EventId set.'); return; }
+                    const evResp = await fetch(urlPath('/api/calendar/events/byIds'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ ids: pages.map(p => p.eventId) }) });
+                    if (!evResp.ok) throw new Error(await evResp.text());
+                    const { events } = await evResp.json();
+                    const updates = [];
+                    for (const p of pages) {
+                        const ev = events.find(e => e.id === p.eventId);
+                        if (!ev) continue;
+                        const due = ev.start?.dateTime || ev.start?.date || null;
+                        const title = ev.summary || null;
+                        if (due || title) updates.push({ notionId: p.notionId, due, title });
+                    }
+                    if (!updates.length) { showMsg('No changes to sync.'); return; }
+                    const syncResp = await fetch(urlPath('/api/sync/calendar-to-notion'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ statusProp, items: updates }) });
+                    if (!syncResp.ok) throw new Error(await syncResp.text());
+                    const js = await syncResp.json();
+                    showMsg(`Synced ${js.updated} item(s) from Calendar to Notion.`);
+                } catch(e) { showMsg('Sync failed. Ensure Google and Notion are configured.'); }
+            });
+
+            // Settings modal logic
+            const settingsBtn = document.createElement('button');
+            settingsBtn.className = 'fixed bottom-6 right-6 bg-gray-800 text-white px-4 py-2 rounded-full shadow-lg hover:bg-gray-900';
+            settingsBtn.textContent = 'Settings';
+            document.body.appendChild(settingsBtn);
+            const modal = document.getElementById('settings-modal');
+            const closeBtn = document.getElementById('settings-close');
+            const saveBtn = document.getElementById('settings-save');
+            const cityInput = document.getElementById('city-input');
+            const notionDbInput = document.getElementById('notion-db-input');
+
+            function openModal() { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+            function closeModal() { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+            settingsBtn.addEventListener('click', openModal);
+            closeBtn.addEventListener('click', closeModal);
+            modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+            // Sign-in popup flow with status polling
+            async function refreshAuthLabel() {
+                try {
+                    const r = await fetch(urlPath('/auth/status'), { credentials: 'include' });
+                    const j = await r.json();
+                    const label = document.getElementById('google-conn-label');
+                    const btn = document.getElementById('google-signin');
+                    if (j.authenticated) {
+                        label.textContent = 'Google Calendar Connected';
+                        btn.textContent = 'Sign Out';
+                    } else {
+                        label.textContent = 'Connect Google Calendar';
+                        btn.textContent = 'Sign In';
+                    }
+                } catch(e) { /* ignore */ }
+            }
+            refreshAuthLabel();
+
+            document.getElementById('google-signin').addEventListener('click', async (e) => {
+                e.preventDefault();
+                try {
+                    const r = await fetch(urlPath('/auth/status'), { credentials: 'include' });
+                    const j = await r.json();
+                    if (j.authenticated) {
+                        await fetch(urlPath('/auth/logout'), { method: 'POST', credentials: 'include' });
+                        await refreshAuthLabel();
+                        return;
+                    }
+                } catch(e) {}
+                const w = window.open(urlPath('/auth/google/start'), 'google-auth', 'width=500,height=600');
+                const timer = setInterval(async () => {
+                    if (w && w.closed) {
+                        clearInterval(timer);
+                        await refreshAuthLabel();
+                        fetchDataAndPopulate();
+                    }
+                }, 800);
+            });
+
+            // Load saved
+            try {
+                cityInput.value = localStorage.getItem('city') || '';
+                notionDbInput.value = localStorage.getItem('notionDb') || '';
+                document.getElementById('notion-title-prop').value = localStorage.getItem('notionTitleProp') || 'Title';
+                document.getElementById('notion-status-prop').value = localStorage.getItem('notionStatusProp') || 'Status';
+                document.getElementById('notion-priority-prop').value = localStorage.getItem('notionPriorityProp') || 'Priority';
+                document.getElementById('notion-due-prop').value = localStorage.getItem('notionDueProp') || 'Due';
+                document.getElementById('notion-statuses').value = localStorage.getItem('notionAllowedStatuses') || 'Todo, In progress, Today';
+                document.getElementById('notion-priority-order').value = localStorage.getItem('notionPriorityOrder') || 'High, Medium, Low';
+                document.getElementById('include-notion-timeline').checked = (localStorage.getItem('includeNotionTimeline') || 'false') === 'true';
+                document.getElementById('notion-eventid-prop').value = localStorage.getItem('notionEventIdProp') || 'EventId';
+            } catch(e) {}
+
+            saveBtn.addEventListener('click', () => {
+                try {
+                    localStorage.setItem('city', cityInput.value.trim());
+                    localStorage.setItem('notionDb', notionDbInput.value.trim());
+                    localStorage.setItem('notionTitleProp', document.getElementById('notion-title-prop').value.trim() || 'Title');
+                    localStorage.setItem('notionStatusProp', document.getElementById('notion-status-prop').value.trim() || 'Status');
+                    localStorage.setItem('notionPriorityProp', document.getElementById('notion-priority-prop').value.trim() || 'Priority');
+                    localStorage.setItem('notionDueProp', document.getElementById('notion-due-prop').value.trim() || 'Due');
+                    localStorage.setItem('notionAllowedStatuses', document.getElementById('notion-statuses').value.trim() || 'Todo, In progress, Today');
+                    localStorage.setItem('notionPriorityOrder', document.getElementById('notion-priority-order').value.trim() || 'High, Medium, Low');
+                    localStorage.setItem('includeNotionTimeline', document.getElementById('include-notion-timeline').checked ? 'true' : 'false');
+                    localStorage.setItem('notionEventIdProp', document.getElementById('notion-eventid-prop').value.trim() || 'EventId');
+                } catch(e) {}
+                closeModal();
+                fetchDataAndPopulate();
+            });
+
+            async function fetchJSON(url) {
+                const r = await fetch(urlPath(url), { credentials: 'include' });
+                if (!r.ok) throw new Error(await r.text());
+                return r.json();
+            }
+
+            async function fetchDataAndPopulate() {
+                const city = (localStorage.getItem('city') || '').trim();
+                // Weather
+                try {
+                    const weather = await fetchJSON('/api/weather' + (city ? ('?q=' + encodeURIComponent(city)) : ''));
+                    const footer = document.querySelector('header .flex.items-center span');
+                    if (weather && weather.main && footer) {
+                        footer.textContent = `${weather.weather?.[0]?.main || 'Weather'}, ${Math.round(weather.main.temp)}°C`;
+                    }
+                } catch(e) { /* ignore */ }
+
+                // Calendar
+                let mergedItems = [];
+                try {
+                    const { events } = await fetchJSON('/api/calendar/events');
+                    const calItems = (events || []).map(ev => ({
+                        type: 'calendar',
+                        title: ev.summary || 'Untitled Event',
+                        start: ev.start?.dateTime || ev.start?.date || null,
+                        end: ev.end?.dateTime || ev.end?.date || null
+                    }));
+                    mergedItems = mergedItems.concat(calItems);
+                } catch(e) { /* not signed in */ }
+
+                // Notion tasks (optional database id)
+                try {
+                    const db = localStorage.getItem('notionDb');
+                    const params = new URLSearchParams();
+                    if (db) params.set('databaseId', db);
+                    const statusProp = localStorage.getItem('notionStatusProp') || 'Status';
+                    const priorityProp = localStorage.getItem('notionPriorityProp') || 'Priority';
+                    const dueProp = localStorage.getItem('notionDueProp') || 'Due';
+                    const allowed = localStorage.getItem('notionAllowedStatuses') || 'Todo, In progress, Today';
+                    const prioOrder = localStorage.getItem('notionPriorityOrder') || 'High, Medium, Low';
+                    params.set('statusProp', statusProp);
+                    params.set('priorityProp', priorityProp);
+                    params.set('dueProp', dueProp);
+                    params.set('statuses', allowed);
+                    params.set('priorityOrder', prioOrder);
+                    const url = '/api/notion/tasks' + (params.toString() ? ('?' + params.toString()) : '');
+                    const notion = await fetchJSON(url);
+                    renderFocusFromNotion(notion);
+                    if ((localStorage.getItem('includeNotionTimeline') || 'false') === 'true') {
+                        const titleKey = localStorage.getItem('notionTitleProp') || 'Title';
+                        const dueKey = localStorage.getItem('notionDueProp') || 'Due';
+                        const notionItems = (notion.results || []).map(r => {
+                            const props = r.properties || {};
+                            const titleProp = props[titleKey] || Object.values(props).find(p => p.type === 'title');
+                            const titleText = titleProp?.title?.map(t => t.plain_text).join(' ') || 'Notion Task';
+                            const due = props[dueKey]?.date?.start || null;
+                            return due ? { type: 'notion', title: titleText, start: due, end: null } : null;
+                        }).filter(Boolean);
+                        mergedItems = mergedItems.concat(notionItems);
+                    }
+                } catch(e) { /* ignore */ }
+
+                if (mergedItems.length) {
+                    mergedItems = mergedItems.filter(i => i.start).sort((a, b) => new Date(a.start) - new Date(b.start));
+                    renderTimeline(mergedItems);
+                }
+            }
+
+            function renderTimeline(items) {
+                const timelinePanel = document.getElementById('panel-timeline');
+                const list = timelinePanel.querySelector('div.space-y-6');
+                if (!list) return;
+                if (!items.length) return;
+                list.innerHTML = '';
+                for (const it of items) {
+                    const start = it.start;
+                    const end = it.end;
+                    const duration = (start && end && start.includes('T') && end.includes('T'))
+                        ? Math.max(0, (new Date(end) - new Date(start)) / 60000)
+                        : null;
+                    const timeLabel = start ? new Date(start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—';
+                    const durLabel = duration ? `${Math.round(duration)} min` : '';
+                    const row = document.createElement('div');
+                    row.className = 'flex items-start space-x-4';
+                    row.innerHTML = `
+                        <div class="text-right w-20 flex-shrink-0">
+                            <p class="font-semibold text-gray-700">${timeLabel}</p>
+                            <p class="text-sm text-gray-400">${durLabel}</p>
+                        </div>
+                        <div class="relative w-full">
+                            <span class="absolute left-[-26px] top-1.5 h-3 w-3 bg-gray-300 rounded-full"></span>
+                            <span class="absolute left-[-22px] top-5 h-[calc(100%+1.5rem)] w-0.5 bg-gray-200"></span>
+                            <div class="bg-gray-100 p-4 rounded-lg flex justify-between items-center">
+                                <p class="font-medium flex items-center gap-2">${it.title || 'Untitled'}${it.type === 'notion' ? '<span class="px-1.5 py-0.5 text-xs rounded bg-black text-white">Notion</span>' : ''}</p>
+                            </div>
+                        </div>`;
+                    list.appendChild(row);
+                }
+            }
+
+            function renderFocusFromNotion(notionData) {
+                try {
+                    const focusPanel = document.getElementById('panel-focus');
+                    const titleEl = focusPanel.querySelector('h3');
+                    const timeEl = focusPanel.querySelector('p.text-sm');
+                    const item = notionData?.results?.[0];
+                    
+                    if (!item || !titleEl) {
+                        // No Notion data - show default static content
+                        focusPanel.dataset.notionId = '';
+                        focusPanel.dataset.due = '';
+                        return;
+                    }
+                    
+                    const titleKey = localStorage.getItem('notionTitleProp') || 'Title';
+                    const statusKey = localStorage.getItem('notionStatusProp') || 'Status';
+                    const priorityKey = localStorage.getItem('notionPriorityProp') || 'Priority';
+                    const dueKey = localStorage.getItem('notionDueProp') || 'Due';
+
+                    const props = item.properties || {};
+                    const titleProp = props[titleKey] || Object.values(props).find(p => p.type === 'title');
+                    const titleText = titleProp?.title?.map(t => t.plain_text).join(' ') || 'Notion Task';
+                    titleEl.textContent = titleText;
+                    
+                    // Store current focus notion page id for actions
+                    focusPanel.dataset.notionId = item.id;
+                    const dueVal = props[dueKey]?.date?.start || '';
+                    focusPanel.dataset.due = dueVal;
+
+                    // Update time display if due date exists
+                    if (dueVal && timeEl) {
+                        const dueDate = new Date(dueVal);
+                        const endDate = new Date(dueDate.getTime() + 2 * 60 * 60 * 1000); // +2 hours
+                        timeEl.textContent = `${dueDate.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})} - ${endDate.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}`;
+                    }
+
+                    // Add metadata row for status/priority/due
+                    let metaRow = focusPanel.querySelector('.focus-meta');
+                    if (!metaRow) {
+                        metaRow = document.createElement('div');
+                        metaRow.className = 'focus-meta mt-2 flex items-center gap-2 text-sm';
+                        titleEl.parentElement.appendChild(metaRow);
+                    }
+                    const statusName = props[statusKey]?.status?.name || '';
+                    const priorityName = props[priorityKey]?.select?.name || '';
+                    const dueDate = props[dueKey]?.date?.start || '';
+                    metaRow.innerHTML = '';
+                    if (statusName) metaRow.appendChild(badge(statusName, 'bg-gray-100 text-gray-800'));
+                    if (priorityName) metaRow.appendChild(badge(priorityName, priorityColor(priorityName)));
+                    if (dueDate) metaRow.appendChild(badge(new Date(dueDate).toLocaleDateString(), 'bg-blue-50 text-blue-700'));
+                } catch(e) {
+                    console.error('Error rendering focus from Notion:', e);
+                }
+            }
+
+            function badge(text, cls) {
+                const span = document.createElement('span');
+                span.className = `px-2 py-0.5 rounded-md ${cls}`;
+                span.textContent = text;
+                return span;
+            }
+            function priorityColor(name) {
+                const n = String(name).toLowerCase();
+                if (n.includes('high')) return 'bg-red-50 text-red-700';
+                if (n.includes('medium')) return 'bg-yellow-50 text-yellow-700';
+                if (n.includes('low')) return 'bg-green-50 text-green-700';
+                return 'bg-gray-100 text-gray-800';
+            }
+
+            fetchDataAndPopulate();
+
+            // Focus actions
+            document.getElementById('btn-markdone').addEventListener('click', async () => {
+                try {
+                    const focus = document.getElementById('panel-focus');
+                    const notionId = focus.dataset.notionId;
+                    const statusProp = localStorage.getItem('notionStatusProp') || 'Status';
+                    if (!notionId) { 
+                        showMsg('No Notion task loaded. Please configure Notion in Settings and ensure tasks are fetched.'); 
+                        return; 
+                    }
+                    
+                    // Show loading state
+                    const btn = document.getElementById('btn-markdone');
+                    const originalText = btn.textContent;
+                    btn.textContent = 'Updating...';
+                    btn.disabled = true;
+                    
+                    const response = await fetch(urlPath(`/api/notion/pages/${encodeURIComponent(notionId)}/status`), {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ statusProp, value: 'Done' })
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('Failed to update status');
+                    }
+                    
+                    showMsg('✅ Task marked as Done in Notion!');
+                    fetchDataAndPopulate();
+                    
+                    // Reset button
+                    btn.textContent = originalText;
+                    btn.disabled = false;
+                } catch(e) { 
+                    showMsg('❌ Failed to mark as done. Check your Notion configuration.');
+                    console.error('Mark done error:', e);
+                    
+                    // Reset button on error
+                    const btn = document.getElementById('btn-markdone');
+                    btn.textContent = 'Mark as Done';
+                    btn.disabled = false;
+                }
+            });
+
+            // Reschedule modal functionality
+            const rescheduleModal = document.getElementById('reschedule-modal');
+            const rescheduleClose = document.getElementById('reschedule-close');
+            const rescheduleCancel = document.getElementById('reschedule-cancel');
+            const rescheduleConfirm = document.getElementById('reschedule-confirm');
+            const rescheduleTaskTitle = document.getElementById('reschedule-task-title');
+            const rescheduleDate = document.getElementById('reschedule-date');
+            const rescheduleTime = document.getElementById('reschedule-time');
+            const rescheduleDuration = document.getElementById('reschedule-duration');
+
+            function openRescheduleModal() {
+                const focus = document.getElementById('panel-focus');
+                const taskTitle = focus.querySelector('h3')?.textContent || 'Current Task';
+                rescheduleTaskTitle.textContent = taskTitle;
+                
+                // Set default values - tomorrow at 9 AM for 2 hours
+                const now = new Date();
+                const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+                rescheduleDate.value = tomorrow.toISOString().split('T')[0];
+                rescheduleTime.value = '09:00';
+                rescheduleDuration.value = '2';
+                
+                rescheduleModal.classList.remove('hidden');
+                rescheduleModal.classList.add('flex');
+            }
+
+            function closeRescheduleModal() {
+                rescheduleModal.classList.add('hidden');
+                rescheduleModal.classList.remove('flex');
+            }
+
+            document.getElementById('btn-reschedule').addEventListener('click', openRescheduleModal);
+            rescheduleClose.addEventListener('click', closeRescheduleModal);
+            rescheduleCancel.addEventListener('click', closeRescheduleModal);
+            rescheduleModal.addEventListener('click', (e) => {
+                if (e.target === rescheduleModal) closeRescheduleModal();
+            });
+
+            rescheduleConfirm.addEventListener('click', async () => {
+                try {
+                    const focus = document.getElementById('panel-focus');
+                    const notionId = focus.dataset.notionId;
+                    if (!notionId) {
+                        showMsg('No Notion task loaded.');
+                        return;
+                    }
+
+                    const date = rescheduleDate.value;
+                    const time = rescheduleTime.value;
+                    const duration = parseFloat(rescheduleDuration.value) || 2;
+
+                    if (!date || !time) {
+                        showMsg('Please select both date and time.');
+                        return;
+                    }
+
+                    // Validate duration
+                    if (duration <= 0 || duration > 24) {
+                        showMsg('Duration must be between 0.5 and 24 hours.');
+                        return;
+                    }
+
+                    // Create ISO datetime string
+                    const startDateTime = `${date}T${time}:00`;
+                    const startDate = new Date(startDateTime);
+                    const endDate = new Date(startDate.getTime() + duration * 60 * 60 * 1000);
+                    const endDateTime = endDate.toISOString().slice(0, 19);
+
+                    const dueProp = localStorage.getItem('notionDueProp') || 'Due';
+                    
+                    // Update Notion task
+                    const response = await fetch(urlPath(`/api/notion/pages/${encodeURIComponent(notionId)}/due`), {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ dueProp, start: startDateTime, end: endDateTime })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Failed to update Notion task');
+                    }
+
+                    const formattedDate = new Date(startDateTime).toLocaleDateString('en-US', {
+                        weekday: 'short',
+                        month: 'short', 
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    showMsg(`✅ Task rescheduled to ${formattedDate}`);
+                    closeRescheduleModal();
+                    fetchDataAndPopulate();
+                } catch (e) {
+                    showMsg('Failed to reschedule task. Please try again.');
+                    console.error('Reschedule error:', e);
+                }
+            });
+
+            // Quick add modal functionality
+            const quickAddModal = document.getElementById('quick-add-modal');
+            const quickAddClose = document.getElementById('quick-add-close');
+            const quickAddCancel = document.getElementById('quick-add-cancel');
+            const quickAddConfirm = document.getElementById('quick-add-confirm');
+            const quickAddTitle = document.getElementById('quick-add-title');
+            const quickAddDate = document.getElementById('quick-add-date');
+            const quickAddPriority = document.getElementById('quick-add-priority');
+            const quickAddStatus = document.getElementById('quick-add-status');
+
+            function openQuickAddModal() {
+                // Reset form
+                quickAddTitle.value = '';
+                quickAddDate.value = '';
+                quickAddPriority.value = 'Medium';
+                quickAddStatus.value = 'Todo';
+                
+                quickAddModal.classList.remove('hidden');
+                quickAddModal.classList.add('flex');
+                quickAddTitle.focus();
+            }
+
+            function closeQuickAddModal() {
+                quickAddModal.classList.add('hidden');
+                quickAddModal.classList.remove('flex');
+            }
+
+            document.getElementById('btn-quick-add').addEventListener('click', openQuickAddModal);
+            quickAddClose.addEventListener('click', closeQuickAddModal);
+            quickAddCancel.addEventListener('click', closeQuickAddModal);
+            quickAddModal.addEventListener('click', (e) => {
+                if (e.target === quickAddModal) closeQuickAddModal();
+            });
+
+            quickAddConfirm.addEventListener('click', async () => {
+                try {
+                    const title = quickAddTitle.value.trim();
+                    if (!title) {
+                        showMsg('Please enter a task title.');
+                        return;
+                    }
+
+                    const db = localStorage.getItem('notionDb') || '';
+                    if (!db) {
+                        showMsg('Please configure Notion Database ID in Settings.');
+                        return;
+                    }
+
+                    const titleProp = localStorage.getItem('notionTitleProp') || 'Title';
+                    const dueProp = localStorage.getItem('notionDueProp') || 'Due';
+                    const statusProp = localStorage.getItem('notionStatusProp') || 'Status';
+                    const priorityProp = localStorage.getItem('notionPriorityProp') || 'Priority';
+                    
+                    const due = quickAddDate.value || null;
+                    const priority = quickAddPriority.value;
+                    const status = quickAddStatus.value;
+
+                    // Show loading state
+                    quickAddConfirm.textContent = 'Adding...';
+                    quickAddConfirm.disabled = true;
+
+                    const response = await fetch(urlPath('/api/notion/quick-add'), {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            databaseId: db,
+                            titleProp,
+                            dueProp,
+                            statusProp,
+                            title,
+                            due,
+                            status,
+                            priority,
+                            priorityProp
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Failed to add task');
+                    }
+
+                    showMsg(`✅ Task "${title}" added to Notion!`);
+                    closeQuickAddModal();
+                    fetchDataAndPopulate();
+                    
+                    // Reset button
+                    quickAddConfirm.textContent = 'Add Task';
+                    quickAddConfirm.disabled = false;
+                } catch (e) {
+                    showMsg('❌ Failed to add task. Check your Notion configuration.');
+                    console.error('Quick add error:', e);
+                    
+                    // Reset button on error
+                    quickAddConfirm.textContent = 'Add Task';
+                    quickAddConfirm.disabled = false;
+                }
+            });
+        })();
+    </script>
+</body>
+</html>
