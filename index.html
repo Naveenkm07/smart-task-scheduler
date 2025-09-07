@@ -729,9 +729,13 @@
             } catch(e) {}
 
             saveBtn.addEventListener('click', () => {
+                console.log('Save button clicked'); // Debug log
                 try {
-                    localStorage.setItem('city', cityInput.value.trim());
-                    localStorage.setItem('notionDb', notionDbInput.value.trim());
+                    const cityValue = cityInput.value.trim();
+                    const dbValue = notionDbInput.value.trim();
+                    
+                    localStorage.setItem('city', cityValue);
+                    localStorage.setItem('notionDb', dbValue);
                     localStorage.setItem('notionTitleProp', document.getElementById('notion-title-prop').value.trim() || 'Title');
                     localStorage.setItem('notionStatusProp', document.getElementById('notion-status-prop').value.trim() || 'Status');
                     localStorage.setItem('notionPriorityProp', document.getElementById('notion-priority-prop').value.trim() || 'Priority');
@@ -740,9 +744,22 @@
                     localStorage.setItem('notionPriorityOrder', document.getElementById('notion-priority-order').value.trim() || 'High, Medium, Low');
                     localStorage.setItem('includeNotionTimeline', document.getElementById('include-notion-timeline').checked ? 'true' : 'false');
                     localStorage.setItem('notionEventIdProp', document.getElementById('notion-eventid-prop').value.trim() || 'EventId');
-                } catch(e) {}
-                closeModal();
-                fetchDataAndPopulate();
+                    
+                    console.log('Settings saved:', { city: cityValue, notionDb: dbValue }); // Debug log
+                    
+                    // Show success message
+                    showMsg('✅ Settings saved successfully!');
+                    
+                    closeModal();
+                    
+                    // Small delay to ensure modal closes before fetching data
+                    setTimeout(() => {
+                        fetchDataAndPopulate();
+                    }, 100);
+                } catch(e) {
+                    console.error('Save error:', e);
+                    showMsg('❌ Failed to save settings. Please try again.');
+                }
             });
 
             async function fetchJSON(url) {
@@ -775,11 +792,16 @@
                     mergedItems = mergedItems.concat(calItems);
                 } catch(e) { /* not signed in */ }
 
-                // Notion tasks (optional database id)
+                // Notion tasks - check configuration first
+                const db = localStorage.getItem('notionDb');
+                if (!db) {
+                    showConfigurationHelp();
+                    return;
+                }
+
                 try {
-                    const db = localStorage.getItem('notionDb');
                     const params = new URLSearchParams();
-                    if (db) params.set('databaseId', db);
+                    params.set('databaseId', db);
                     const statusProp = localStorage.getItem('notionStatusProp') || 'Status';
                     const priorityProp = localStorage.getItem('notionPriorityProp') || 'Priority';
                     const dueProp = localStorage.getItem('notionDueProp') || 'Due';
@@ -790,9 +812,16 @@
                     params.set('dueProp', dueProp);
                     params.set('statuses', allowed);
                     params.set('priorityOrder', prioOrder);
-                    const url = '/api/notion/tasks' + (params.toString() ? ('?' + params.toString()) : '');
+                    const url = '/api/notion/tasks?' + params.toString();
                     const notion = await fetchJSON(url);
-                    renderFocusFromNotion(notion);
+                    
+                    if (notion.results && notion.results.length > 0) {
+                        renderFocusFromNotion(notion);
+                        hideConfigurationHelp();
+                    } else {
+                        showMsg('No tasks found in Notion. Create some tasks with the configured statuses.');
+                    }
+                    
                     if ((localStorage.getItem('includeNotionTimeline') || 'false') === 'true') {
                         const titleKey = localStorage.getItem('notionTitleProp') || 'Title';
                         const dueKey = localStorage.getItem('notionDueProp') || 'Due';
@@ -805,12 +834,52 @@
                         }).filter(Boolean);
                         mergedItems = mergedItems.concat(notionItems);
                     }
-                } catch(e) { /* ignore */ }
+                } catch(e) { 
+                    console.error('Notion fetch error:', e);
+                    showMsg('Failed to fetch Notion tasks. Check your configuration and token.');
+                }
 
                 if (mergedItems.length) {
                     mergedItems = mergedItems.filter(i => i.start).sort((a, b) => new Date(a.start) - new Date(b.start));
                     renderTimeline(mergedItems);
                 }
+            }
+
+            function showConfigurationHelp() {
+                const focusPanel = document.getElementById('panel-focus');
+                let helpDiv = focusPanel.querySelector('.config-help');
+                if (!helpDiv) {
+                    helpDiv = document.createElement('div');
+                    helpDiv.className = 'config-help mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg';
+                    focusPanel.appendChild(helpDiv);
+                }
+                helpDiv.innerHTML = `
+                    <div class="flex items-start gap-3">
+                        <svg class="w-5 h-5 text-blue-500 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                        </svg>
+                        <div>
+                            <h4 class="font-semibold text-blue-800">Setup Required</h4>
+                            <p class="text-sm text-blue-700 mt-1">To load real tasks, please:</p>
+                            <ol class="text-sm text-blue-700 mt-2 ml-4 list-decimal">
+                                <li>Click the Settings button (bottom right)</li>
+                                <li>Add your Notion Database ID</li>
+                                <li>Configure property names to match your database</li>
+                                <li>Save settings</li>
+                            </ol>
+                            <button id="open-settings-help" class="mt-3 bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">Open Settings</button>
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('open-settings-help')?.addEventListener('click', () => {
+                    document.querySelector('.fixed.bottom-6.right-6')?.click();
+                });
+            }
+
+            function hideConfigurationHelp() {
+                const helpDiv = document.querySelector('.config-help');
+                if (helpDiv) helpDiv.remove();
             }
 
             function renderTimeline(items) {
@@ -923,7 +992,7 @@
                     const notionId = focus.dataset.notionId;
                     const statusProp = localStorage.getItem('notionStatusProp') || 'Status';
                     if (!notionId) { 
-                        showMsg('No Notion task loaded. Please configure Notion in Settings and ensure tasks are fetched.'); 
+                        showMsg('⚠️ No active task. Configure Notion in Settings or create tasks with status "Todo", "In progress", or "Today".'); 
                         return; 
                     }
                     
