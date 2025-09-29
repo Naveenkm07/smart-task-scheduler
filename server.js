@@ -7,6 +7,7 @@ import session from 'express-session';
 import cors from 'cors';
 import fetch from 'node-fetch';
 import { google } from 'googleapis';
+import agentRunner from './agents/agent-runner.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -414,8 +415,182 @@ app.post('/api/sync/calendar-to-notion', async (req, res) => {
     }
 });
 
-app.listen(PORT, () => {
+// ===============================
+// AGENTIC AI ENDPOINTS
+// ===============================
+
+// Get agent system status
+app.get('/api/agents/status', async (req, res) => {
+    try {
+        const status = await agentRunner.getSystemStatus();
+        res.json(status);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to get agent status', details: error.message });
+    }
+});
+
+// Start the agent system
+app.post('/api/agents/start', async (req, res) => {
+    try {
+        await agentRunner.start();
+        res.json({ message: 'Agent system started successfully', status: 'running' });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to start agents', details: error.message });
+    }
+});
+
+// Stop the agent system
+app.post('/api/agents/stop', async (req, res) => {
+    try {
+        await agentRunner.stop();
+        res.json({ message: 'Agent system stopped successfully', status: 'stopped' });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to stop agents', details: error.message });
+    }
+});
+
+// Trigger specific agent manually
+app.post('/api/agents/trigger/:agentName', async (req, res) => {
+    try {
+        const { agentName } = req.params;
+        const validAgents = ['collector', 'planner', 'executor', 'reviewer', 'fullWorkflow'];
+        
+        if (!validAgents.includes(agentName)) {
+            return res.status(400).json({ 
+                error: 'Invalid agent name', 
+                validAgents 
+            });
+        }
+
+        let result;
+        switch (agentName) {
+            case 'collector':
+                result = await agentRunner.triggerCollection();
+                break;
+            case 'planner':
+                result = await agentRunner.triggerPlanning();
+                break;
+            case 'executor':
+                result = await agentRunner.triggerExecution();
+                break;
+            case 'reviewer':
+                result = await agentRunner.triggerReview();
+                break;
+            case 'fullWorkflow':
+                result = await agentRunner.triggerFullWorkflow();
+                break;
+        }
+
+        res.json({ 
+            message: `${agentName} agent triggered successfully`,
+            result: result ? 'success' : 'failed',
+            data: result
+        });
+    } catch (error) {
+        res.status(500).json({ 
+            error: `Failed to trigger ${req.params.agentName}`, 
+            details: error.message 
+        });
+    }
+});
+
+// Get agent execution history
+app.get('/api/agents/history/:agentName', async (req, res) => {
+    try {
+        const { agentName } = req.params;
+        const limit = parseInt(req.query.limit) || 20;
+        
+        const history = await agentRunner.agents[agentName]?.constructor.getAgentHistory?.(agentName, limit) || 
+                       await database.getAgentHistory(agentName, limit);
+        
+        res.json({ agent: agentName, history });
+    } catch (error) {
+        res.status(500).json({ 
+            error: 'Failed to get agent history', 
+            details: error.message 
+        });
+    }
+});
+
+// Get latest collected data
+app.get('/api/agents/data/latest', async (req, res) => {
+    try {
+        const CollectorAgent = (await import('./agents/collector-agent.js')).default;
+        const latestData = await CollectorAgent.getLatestData();
+        res.json(latestData || { message: 'No data available' });
+    } catch (error) {
+        res.status(500).json({ 
+            error: 'Failed to get latest data', 
+            details: error.message 
+        });
+    }
+});
+
+// Get latest plan
+app.get('/api/agents/plan/latest', async (req, res) => {
+    try {
+        const PlannerAgent = (await import('./agents/planner-agent.js')).default;
+        const latestPlan = await PlannerAgent.getLatestPlan();
+        res.json(latestPlan || { message: 'No plan available' });
+    } catch (error) {
+        res.status(500).json({ 
+            error: 'Failed to get latest plan', 
+            details: error.message 
+        });
+    }
+});
+
+// Get performance review
+app.get('/api/agents/review/latest', async (req, res) => {
+    try {
+        const ReviewerAgent = (await import('./agents/reviewer-agent.js')).default;
+        const latestReview = await ReviewerAgent.getLatestReview();
+        res.json(latestReview || { message: 'No review available' });
+    } catch (error) {
+        res.status(500).json({ 
+            error: 'Failed to get latest review', 
+            details: error.message 
+        });
+    }
+});
+
+// Store Google tokens for agents
+app.post('/api/agents/auth/google', (req, res) => {
+    try {
+        if (req.session.googleTokens) {
+            // Store tokens for agent use
+            req.session.agentTokens = req.session.googleTokens;
+            res.json({ message: 'Google tokens stored for agent use' });
+        } else {
+            res.status(401).json({ error: 'No Google tokens found in session' });
+        }
+    } catch (error) {
+        res.status(500).json({ 
+            error: 'Failed to store tokens', 
+            details: error.message 
+        });
+    }
+});
+
+app.listen(PORT, async () => {
     console.log(`Server running on http://localhost:${PORT}`);
+    
+    // Initialize and start the agent system
+    console.log('\n🤖 Initializing Agentic AI System...');
+    try {
+        const initialized = await agentRunner.initialize();
+        if (initialized) {
+            // Auto-start agents if AGENT_AUTO_START is true
+            if (process.env.AGENT_AUTO_START === 'true') {
+                await agentRunner.start();
+                console.log('🚀 Agentic AI System started automatically');
+            } else {
+                console.log('🤖 Agentic AI System ready (manual start required)');
+            }
+        }
+    } catch (error) {
+        console.error('❌ Failed to initialize Agentic AI System:', error);
+    }
 });
 
 
